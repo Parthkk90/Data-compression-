@@ -1,0 +1,10 @@
+python-magic
+click
+torch
+torchvision
+numpy
+tqdm
+ipfshttpclient
+pytest
+fastapi
+uvicorn
