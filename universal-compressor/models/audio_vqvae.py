@@ -1,0 +1,12 @@
+import os
+def compress_audio(path: str):
+    with open(path, 'rb') as f:
+        raw = f.read()
+    payload = raw[:max(1, len(raw)//2)]
+    meta = {
+        "original_name": os.path.basename(path),
+        "original_size": len(raw),
+        "compressed_size": len(payload),
+        "model": "audio_vqvae_stub_v0"
+    }
+    return payload, meta
