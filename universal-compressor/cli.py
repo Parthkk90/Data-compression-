@@ -1,59 +1,64 @@
-import argparse
-import os
 import sys
-from pathlib import Path
+from core.file_detector import detect_file_type
+from core.ppc_wrapper import wrap_ppc, unwrap_ppc
+from models import text_compressor, image_compressor, audio_compressor
+from storage.ipfs_handler import store_file, retrieve_file
 
-# Import modules (you'll create these later)
-# from modules import image_compressor, text_compressor, audio_compressor
 
-def detect_file_type(file_path: Path) -> str:
-    ext = file_path.suffix.lower()
-    if ext in ['.png', '.jpg', '.jpeg']:
-        return "image"
-    elif ext in ['.txt', '.csv', '.json']:
-        return "text"
-    elif ext in ['.wav']:
-        return "audio"
-    elif ext == '.ppc':
-        return "ppc"
+def compress(input_path):
+    ftype = detect_file_type(input_path)
+    print(f"[INFO] Detected file type: {ftype}")
+
+    if ftype == "text":
+        compressed = text_compressor.compress(input_path)
+    elif ftype == "image":
+        compressed = image_compressor.compress(input_path)
+    elif ftype == "audio":
+        compressed = audio_compressor.compress(input_path)
     else:
-        return "unknown"
+        print("[ERROR] Unsupported file type")
+        return
 
-def compress(file_path: Path):
-    file_type = detect_file_type(file_path)
-    print(f"[INFO] Detected file type: {file_type}")
-    # Placeholder — later call the AI compression model
-    output_file = file_path.with_suffix('.ppc')
-    with open(file_path, 'rb') as f_in, open(output_file, 'wb') as f_out:
-        f_out.write(f_in.read())  # Temporary: just copies
-    print(f"[SUCCESS] Compressed to {output_file}")
+    output_path = input_path.rsplit(".", 1)[0] + ".ppc"
+    wrap_ppc(compressed, output_path)
+    print(f"[SUCCESS] Compressed to {output_path}")
 
-def decompress(file_path: Path):
-    if file_path.suffix != '.ppc':
-        print("[ERROR] File is not a .ppc file.")
-        sys.exit(1)
-    # Placeholder — later call the AI decompression model
-    output_file = file_path.with_suffix('.decompressed')
-    with open(file_path, 'rb') as f_in, open(output_file, 'wb') as f_out:
-        f_out.write(f_in.read())  # Temporary: just copies
-    print(f"[SUCCESS] Decompressed to {output_file}")
+    cid = store_file(output_path)
+    print(f"[INFO] Stored on IPFS with CID: {cid}")
+
+
+def decompress(ppc_path):
+    data = unwrap_ppc(ppc_path)
+    ftype = data.get("type")
+
+    if ftype == "text":
+        text_compressor.decompress(data["content"], ppc_path.replace(".ppc", ".txt"))
+    elif ftype == "image":
+        image_compressor.decompress(data["content"], ppc_path.replace(".ppc", ".png"))
+    elif ftype == "audio":
+        audio_compressor.decompress(data["content"], ppc_path.replace(".ppc", ".wav"))
+    else:
+        print("[ERROR] Unknown file type in PPC package")
+        return
+
+    print(f"[SUCCESS] Decompressed {ppc_path}")
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Pied Piper Universal Compressor CLI")
-    parser.add_argument("command", choices=["compress", "decompress"], help="Action to perform")
-    parser.add_argument("file", type=str, help="Path to file")
-    args = parser.parse_args()
-
-    file_path = Path(args.file)
-
-    if not file_path.exists():
-        print(f"[ERROR] File not found: {file_path}")
+    if len(sys.argv) < 3:
+        print("Usage: pcc <compress|decompress> <file>")
         sys.exit(1)
 
-    if args.command == "compress":
-        compress(file_path)
-    elif args.command == "decompress":
-        decompress(file_path)
+    action, path = sys.argv[1], sys.argv[2]
+
+    if action == "compress":
+        compress(path)
+    elif action == "decompress":
+        decompress(path)
+    else:
+        print(f"[ERROR] Unknown action: {action}")
+        sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
