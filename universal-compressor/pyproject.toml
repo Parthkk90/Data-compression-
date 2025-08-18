@@ -23,3 +23,11 @@ dependencies = [
 
 [project.scripts]
 pcc = "cli:main"
+
+
+[project]
+name = "universal-compressor"
+version = "0.0.1"
+description = "An Entry point based on the CLI page 
+ fonts to get at the initial phase-1"
+ 

@@ -50,14 +50,23 @@ def main():
         sys.exit(1)
 
     action, path = sys.argv[1], sys.argv[2]
+    
+    path2 = "F:\Data-compression\universal-compressor\data.csv"
 
     if action == "compress":
         compress(path)
     elif action == "decompress":
         decompress(path)
+    elif action == "univerasal-compressor":
+        compress(path)
+        
     else:
         print(f"[ERROR] Unknown action: {action}")
         sys.exit(1)
+        
+    
+        
+    
 
 
 if __name__ == "__main__":
